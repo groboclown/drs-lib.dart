@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="style.css" media="all" rel="stylesheet" type="text/css" />
+
+    <title>Pragma - Discrete Reactive Simulation Architecture</title>
+</head>
+<body>
+<ol id="stoc">
+    <li><a href="index.html">Overview</a></li>
+    <li><a href="action.html">Action</a></li>
+    <li><a href="attribute.html">Attribute</a></li>
+    <li><a href="engine_algorithm.html">Engine Algorithm</a></li>
+    <li><a href="function.html">Function</a></li>
+    <li class="selected"><a href="pragma.html">Pragma</a></li>
+    <li><a href="template.html">Template</a></li>
+    <li><a href="value_types.html">Value Types</a></li>
+</ol>
+<h1>Discrete Reactive Simulation Architecture</h1>
+
+
+<h2>Pragma</h2>
+
+<p>
+    A Pragma contains independent data associated with
+    <a href="attribute.html">Attributes</a>, and
+    <a href="value_types.html#link">Links</a> to Pragma, and itself has a
+    globally unique identifier.
+</p>
+<p>
+    The system acts as though Pragma have all
+    <a href="attribute.html">Attributes</a> and
+    <a href="value_types.html#link">Links</a> defined for them, defaulting to
+    <a href="value_types.html#null">null values</a>.  This allows references to
+    not-existing or undefined values to work if a future
+    <a href="action.html">Action</a> defines them.
+</p>
+
+
+<h3><a name="weak">Weak Copies</a></h3>
+
+<p>
+    A temporary copy of an existing Pragma, and associated with a
+    <a href="#context">Context</a>.  The system creates the copies
+    automatically for two scenarios.
+</p>
+<ul>
+    <li><strong>Action Processing</strong> - when an
+    <a href="action.html">Action</a> executes, the system creates
+    a weak copy to write the new values.  The original Pragma keeps a set of
+    <a href="#commit">Commits</a> open while the action processing occurs.
+    As actions complete, the weak copy closes and allows the
+    <a href="#commit">Commit</a> to execute on the weak copy.</li>
+    <li><strong>Predictive Analysis</strong> - a
+    <a href="function.html">Function</a> defined as
+    <a href="function.html#predictive">Predictive</a> constructs a new
+    <a href="#context">Context</a> in which all affected Pragma run.  These
+    Pragma never commit back to the source Pragma.</li>
+</ul>
+
+
+<h3><a name="strong">Strong Copies</a></h3>
+
+<p>
+    Creates a full new copy of an existing Pragma.  This includes correct
+    duplication of the back links and a unique ID.  This allows for cloning
+    existing objects for permanent storage in the system.
+</p>
+<p>
+    Because of the way <a href="#weak">weak copies</a> work, a Strong Copy of
+    a Pragma has no commit phase into the system.  The system adds it directly
+    into the system, either with an automatically generated ID (guaranteed to
+    have no conflicts with existing Pragma), or a well defined ID which may
+    result in a <a href="index.html#errors">soft error</a>.
+</p>
+
+
+<h3><a name="commit">Commit</a></h3>
+
+<p>
+    <a href="#weak">Weak copies</a> of Pragma schedule themselves to commit
+    changes to their <a href="attribute.html">Attributes</a> back to the
+    original Pragma.  The system can do this on a
+    per-<a href="attribute.html">Attribute</a> basis, allowing for heavy
+    parallelization.
+</p>
+
+</body>
+</html>

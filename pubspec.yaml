@@ -1,0 +1,8 @@
+name: drs-lib
+author: Groboclown
+version: 0.0.1
+description: Discrete Reactive Simulation Library
+dependencies:
+
+dev-dependencies:
+  unittest: any

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="style.css" media="all" rel="stylesheet" type="text/css" />
+
+    <title>Value Types - Discrete Reactive Simulation Architecture</title>
+</head>
+<body>
+<ol id="stoc">
+    <li><a href="index.html">Overview</a></li>
+    <li><a href="action.html">Action</a></li>
+    <li><a href="attribute.html">Attribute</a></li>
+    <li><a href="engine_algorithm.html">Engine Algorithm</a></li>
+    <li><a href="function.html">Function</a></li>
+    <li><a href="pragma.html">Pragma</a></li>
+    <li><a href="template.html">Template</a></li>
+    <li class="selected"><a href="value_types.html">Value Types</a></li>
+</ol>
+<h1>Discrete Reactive Simulation Architecture</h1>
+
+
+<h2>Value Types</h2>
+
+<p>
+    The architecture supports a finite list of strong types for its values,
+    and sets of these values.  Because of this definition, the
+    types do not allow for sets-of-sets.
+</p>
+
+<ul>
+    <li><strong>String</strong> - an ordered collection of character data.</li>
+    <li><strong>Numeric</strong> - a determanistic real number.</li>
+    <li><strong>Fuzzy</strong> - a number in the range [0, 1] with specific
+        multi-valence set operations.  Systems should use these to represent
+        values restricted to a range, or booleans.</li>
+    <li><strong>Pragma Link</strong> - a reference to a Link ID for a
+        <a href="pragma.html">Pragma</a>.  The reference does not itself
+        reference a Pragma, nor does it reflect the linked-to Pragma on the
+        currently bound Pragma, but instead must be bound to an owning Pragma
+        to find the Pragma by its Link ID.</li>
+    <li><strong>Attribute ID</strong> - a reference to a global attribute
+        identifier, without any binding to a specific Pragma or its links.</li>
+    <li><strong>Attribute Link</strong> - a combination of a Pragma Link and
+        an Attribute ID.</li>
+    <li><strong>Pragma Handle</strong> - a <a href="#link">reference</a> to a
+        specific <a href="pragma.html">Pragma</a>;
+        the result of a Pragma Link bound to an owning
+        <a href="pragma.html">Pragma</a>.</li>
+    <li><strong>Attribute Handle</strong> - a reference to an
+        <a href="attribute.html">Attribute Value</a> on a specific
+        <a href="pragma.html">Pragma</a>; the result of an Attribute Link or
+        Attribute ID bound to an owning Pragma.</li>
+</ul>
+
+
+<h3><a name="transformation"></a></h3>
+<p>
+    The system does not allow for implicit transformation from one type to
+    another; such transformations must occur through a
+    <a href="function.html">Function</a>.
+</p>
+<p>
+    This also means that there MUST NOT be a construction of a reference to
+    an ID by concatenating strings or numbers.  These should be handled
+    carefully, and constructs containing lists of Pragma should actually use
+    a list of Links, rather than building those Links.
+</p>
+
+
+
+<h3><a name="null">Null Values</a></h3>
+
+<p>
+    All value types allow for a null value, which indicates an absence of a
+    value.  All base operations on value types require null safety.
+</p>
+<p>
+    Each type has a specific meaning for null values, as interpreted by the
+    low-level operations, but additional operations allow for inspecting
+    whether the value is null or not.
+</p>
+
+<ul>
+    <li><strong>Set</strong> - an empty set</li>
+    <li><strong>String</strong> - an empty string</li>
+    <li><strong>Numeric</strong> - 0</li>
+    <li><strong>Fuzzy</strong> - 0 (which allows Boolean representations reflect
+        allow unassigned values as false)</li>
+    <li><strong>Pragma Link</strong> - a null <a href="pragma.html">Pragma</a>,
+        which means a <a href="pragma.html">Pragma</a>
+        with only Null values for Attributes and Links</li>
+    <li><strong>Unassigned Link</strong> - also represents
+        a null <a href="pragma.html">Pragma</a>.</li>
+    <li><strong>Attribute Link</strong> - has the same semantics as a
+        null Pragma Link, but references the
+        <a href="attribute.html">Attribute</a> of that null
+        <a href="pragma.html">Pragma</a>.</li>
+    <li><strong>Set</strong> - an empty set</li>
+</ul>
+
+<p>
+    Note that a Set will never contain null values.  It can contain a link to
+    an unassigned Pragma, but not null links.
+</p>
+
+
+<h3><a name="link">Links</a> and <a name="handle">Handles</a></h3>
+
+<p>
+    <a href="pragma.html">Pragma</a> contain a list of IDs that
+    reference globally unique Pragma IDs, distinct from the global ID of the
+    Pragma, called Links.  This allows for a common ID to reference a linked
+    Pragma (such as "location").
+</p>
+<p>
+    A Link Value to a <a href="pragma.html">Pragma</a> is simply the
+    generic Link ID.  Binding a Link Value to a Pragma results in a
+    <em>Handle</em> to the Pragma in the Links with that generic ID.
+</p>
+<p>
+    Likewise, an Attribute Link is a generic Link ID into that list of
+    references, along with an Attribute ID, and binding an Attribute Link to
+    a Pragma results in a <em>Handle</em> to the
+    <a href="attribute.html">Attribute</a> with that ID on the
+    <a href="pragma.html">Pragma</a> in the Links with that generic ID.
+</p>
+<p>
+    An Attribute ID can also be bound to a <a href="pragma.html">Pragma</a>
+    to create an Attribute Handle.
+</p>
+<p>
+    The system makes a strong distinction between a
+    <a href="pragma.html">Pragma</a> and its Handle in order to enforce the
+    limited scope a <a href="function.html">Function</a> has on its input.
+    <a href="function.html">Function</a> may output a Pragma Handle or
+    Attribute Handle from the binding, which allows the signals generated by
+    changes on the corresponding Attribute or Pragma to trigger Actions.
+</p>
+
+
+<h3><a name="signal">Change Signals</a></h3>
+
+<p>
+    The simulation engine concerns itself primarily with the management of
+    relationships between <a href="function.html">Functions</a> and Values,
+    and the creation of signals based on changes to those
+    <a href="function.html">Functions</a> and Values.
+</p>
+<p>
+    The engine triggers the execution of an <a href="action.html">Action</a>
+    when the bound-to <a href="function.html">Function</a> or Value changes.
+    The meaning of "change" depends upon the value type.
+</p>
+<p>
+    For the simpler types - <strong>String</strong>, <strong>Numeric</strong>,
+    and <strong>Fuzzy</strong> - the engine considers the value changed when
+    the previous value differs from the
+    just-<a href="pragma.html#commit">committed</a> value.
+</p>
+<p>
+    The Link types are just as simple in their meaning of change.  Pragma Link
+    values, Attribute ID values, and Attribute Link values signal changes when
+    the value of the ID to which they reference changes; for the Attribute
+    Link, this means either the Pragma ID or the Attribute ID.
+</p>
+<p>
+    A Pragma Handle signals a change when the handle changes to a different
+    <a href="pragma.html">Pragma</a>.  So, if the Pragma referenced by the
+    corresponding Link changes, then the Pragma Handle changes, resulting in
+    the change signal.  A removal of a reference to a Pragma in the links
+    results in a null <a href="pragma.html">Pragma</a> referenced by the
+    Handle.  It also can potentially change when the Link ID changes value.
+</p>
+<p>
+    Likewise, an Attribute Handle signals a change just like a Pragma Handle,
+    when the corresponding linked-to Pragma changes, or when the Attribute ID
+    in the corresponding Attribute Link changes to reference a different
+    Attribute ID.
+</p>
+
+</body>
+</html>
