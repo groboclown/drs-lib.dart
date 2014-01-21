@@ -4,5 +4,5 @@ version: 0.0.1
 description: Discrete Reactive Simulation Library
 dependencies:
 
-dev-dependencies:
-  unittest: any
+dev_dependencies:
+  unittest: ">=0.9.3"
