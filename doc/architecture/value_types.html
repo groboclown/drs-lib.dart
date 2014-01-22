@@ -54,6 +54,21 @@
 </ul>
 
 
+<h3><a name="set">Sets</a></h3>
+<p>
+    As mentioned above, the engine supports sets of the basic value types, but
+    not sets-of-sets.  Note that these are "sets", meaning that they cannot
+    contain multiple instances of the same referent value.  This means that
+    a set cannot contain to values from the same attribute, but it can hold,
+    say, two different attribute values that are both set to 2.
+</p>
+<p>
+    Also, sets have the potential to be lazy-loaded in order to facilitate
+    highly parallel operations.  Because of this, the access to the values
+    in a set are very restricted.
+</p>
+
+
 <h3><a name="transformation"></a></h3>
 <p>
     The system does not allow for implicit transformation from one type to
