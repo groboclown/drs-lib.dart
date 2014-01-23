@@ -26,7 +26,7 @@
     A Template is a <a href="pragma.html">Pragma</a> which the engine uses
     to populate other <a href="pragma.html">Pragma</a> instances.  Any
     <a href="pragma.html">Pragma</a> can be used as a Template (which is
-    how <a href="pragma.html#strong">strong copies</a> are made).
+    how <a href="pragma.html#clone">strong copies</a> are made).
 </p>
 <p>
     Most Templates, however, possess special wiring to allow for signaling
@@ -92,7 +92,16 @@
         link names.
     </li>
     <li>
-
+        The invocation to perform the copy takes an optional Pragma
+        that defines the list of attributes to copy by value (creating hard
+        links).  This allows for a two-pass
+        copy to perform the necessary actions; the first is copying a
+        "filter" pragma that has a link to the original object, and all the
+        additional function linking via values, and the second is copying
+        the filter pragma onto the destination.  The original will need to
+        be a weak "predictive" copy, to make sure it retains the original
+        values.  For a full copy to take place would require multiple
+        runs through the computation chain within a single cycle.
     </li>
 </ul>
 

@@ -65,7 +65,7 @@
     construction of the system involves either a function or an action.
     Functions at as a functional language by hiding whether a referenced value
     is a hard value or a function based on other functions or values.  Second,
-    the action operates on a <a href="pragma.html#weak">weak copy</a> of the
+    the action operates on a <a href="pragma.html#commit">weak copy</a> of the
     system, allowing them to run in parallel, and all changes are committed
     at the end of the processing.
 </p>
@@ -84,6 +84,62 @@
 <p>
     Hard errors which stop the system happen outside the runtime.  These include
     checking consistency of a system (all the types match up).
+</p>
+
+
+
+<h2>Under Discussion</h2>
+<p>
+    The following details are still being worked out.
+</p>
+
+
+<h3>Commit Conflicts</h3>
+<p>
+    The "commit join" function for Attributes has a solid plan.  The function
+    accepts 3 arguments: attribute handle, the original
+    value, and a lazy list containing the child context values as they are
+    computed.  However, there's a hard problem around
+    handling conflicts in removed / added / etc Links.  Newly created Pragma are
+    handled gracefully because they are assigned a globally unique ID.  Deleted
+    Pragma can cause a conflict, though.  Unfortunately, a delete is hard to
+    manage because sets cannot contain null values.
+</p>
+<p>
+    What if we think of Links as just another Attribute?  It will have a
+    special nomenclature for describing the name so that they don't conflict
+    with any Attribute ID.  In this case, a commit join function can be given
+    to a link (remember - adding and removing links is the exact same thing
+    as changing a link).
+</p>
+<p>
+    The "commit join" function may need some fine tuning.  There could be
+    cases (TODO discover some so that they can be analyzed) where a function
+    may need external data to make a correct decision.  For now, though, I
+    have a strong suspicion that it can be alleviated through well defined
+    actions.
+</p>
+
+
+<h3>Back Link Handling on Copy</h3>
+<p>
+    If a Pragma is copied into a new Pragma, all of the Links are copied there.
+    Some of those links may be back links.  Now, the copy process should
+    first bind the actions, then set values and links so that those actions
+    on the new object are signaled.
+</p>
+<p>
+    A back-link construction would need to have a bound action on the other
+    end Pragma's link to handle this.  However, noticing if this is just a
+    change of value, or a copy, is not easy in the current architecture
+    (if at all possible).  Perhaps marking attributes as transitive so that
+    they are never copied, and a bound action would check if that value was
+    set as it expects, and if not, it's a copy?
+</p>
+<p>
+    Now, it could be that the action creating the copy must be aware of these
+    links, but that's too much to ask.  Perhaps there's a special signal on
+    a pragma that can be bound to, a "was copied into..." action.
 </p>
 
 </body>

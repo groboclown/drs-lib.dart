@@ -123,15 +123,18 @@
 <h3><a name="link">Links</a> and <a name="handle">Handles</a></h3>
 
 <p>
-    <a href="pragma.html">Pragma</a> contain a list of IDs that
+    <a href="pragma.html">Pragma</a> contain
+    a list of IDs that
     reference globally unique Pragma IDs, distinct from the global ID of the
-    Pragma, called Links.  This allows for a common ID to reference a linked
-    Pragma (such as "location").
+    <a href="pragma.html">Pragma</a>,
+    called <a href="pragma.html#link">Links</a>.  This allows for a common
+    ID to reference a linked Pragma (such as "location").
 </p>
 <p>
     A Link Value to a <a href="pragma.html">Pragma</a> is simply the
-    generic Link ID.  Binding a Link Value to a Pragma results in a
-    <em>Handle</em> to the Pragma in the Links with that generic ID.
+    generic Link ID.  Because the ID is not bound to a specific Pragma, it does
+    not reference anything.  Binding a Link Value to a Pragma creates a
+    <em>Handle</em> to the Pragma referenced by the Link with that generic ID.
 </p>
 <p>
     Likewise, an Attribute Link is a generic Link ID into that list of
