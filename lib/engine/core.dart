@@ -57,9 +57,9 @@ class DataTypeException extends DrsConfigurationException {
     ValueType get type => _type;
 
     const DataTypeException(var value, ValueType type) :
-            super("could not assign [$value] to $type"),
             _value = value,
-            _type = type;
+            _type = type,
+            super("could not assign [$value] to $type");
 }
 
 
@@ -119,25 +119,28 @@ class PollInterruptedException extends DrsException {
 
 
 /**
- * Fuzzy value, or multi-valence value.  Here, represented as a numeric between
- * 0 and 1, and can be assigned a weight.  Fuzzy value computations must support
- * a variable number of arguments.
+ * Fuzzy value, or multi-valence value.  The fuzzy value ([data]) is represented
+ * as a numeric between
+ * 0 and 1, and can be assigned a numeric [weight], which allows the value to
+ * be altered during specific calculations, such as averages.  [Fuzzy] value
+ * computations must support a variable number of arguments.
  */
 class Fuzzy {
-    final num _data;
-    final num _weight;
+    final double data;
+    final double weight;
 
-    num get data => _data;
-    num get weight => _weight;
 
-    Fuzzy(this._data) : _weight = 1.0 {
-        _argIsFuzzy(_data);
+    factory Fuzzy(double data) {
+        return new Fuzzy._internal(_argIsFuzzy(data), 1.0);
     }
 
-    Fuzzy.withWeight(this._data, this._weight) {
-        _argIsFuzzy(_data);
-        _argNotNull(_weight, FuzzyType);
+    factory Fuzzy.withWeight(double data, double weight) {
+        return new Fuzzy._internal(_argIsFuzzy(data),
+            _argNotNull(weight, FuzzyType));
     }
+
+
+    const Fuzzy._internal(this.data, this.weight);
 
 
     String toString() {
@@ -169,7 +172,8 @@ typedef Value AttributeJoinCommit(Value original, SetValue commited);
 /**
  * A simulation-wide unique identifier for an attribue.  All attributes with
  * this ID must share the same qualifications.  The user must use the correct
- * API to create one of these.
+ * API to create one of these.  The parameterized [T] represents the data
+ * type for the corresponding [ValueType] parameter.
  */
 abstract class AttributeId<T> {
     abstract String get id;
@@ -364,17 +368,17 @@ class SetValue<T> implements Iterable<T>, Value<T> {
 
     /**
      * Potentially blocking call to pull the entire contents of the set.
-     *
-     * @return null if there is no more values to pull
-     * @throws PollInterruptedException if the poll timed out or was
-     *      interrupted
+     * Returns a null value if no more values can be pulled.  It
+     * throws a [PollInterruptedException] if the poll timed out or was
+     * interrupted
      */
     abstract List<T> pollContents();
 }
 
 
 /**
- * A simple set used for standard user creation of a value.
+ * A simple [SetValue] used for standard user creation of a value.  The
+ * parameter type [T] is the underlying data type of the contained [BasicValue].
  */
 class ImmutableSetValue<T> extends SetValue<T> {
     final List<BasicValue<T>> data;
@@ -404,7 +408,7 @@ class ImmutableSetValue<T> extends SetValue<T> {
 
 
 /**
- * A lazy loaded list for outputting values in a function.  It must be
+ * A lazy loaded [SetValue] for outputting values in a function.  It must be
  * constructed by the caller, and passed in as an input.  The engine must
  * explicitly know when to use these, because it implies a series of highly
  * parallelizable processes.
