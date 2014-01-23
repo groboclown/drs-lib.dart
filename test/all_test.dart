@@ -11,14 +11,14 @@ import 'solver_test.dart' as solver_test;
 
 
 all_tests() {
-    group('solver_test.dart', solver_test.all_tests);
+  group('solver_test.dart', solver_test.all_tests);
 }
 
 
 main(List<String> args) {
-    useVMConfiguration();
-    all_tests();
-    if (! args.isEmpty) {
-        filterTests(args[0]);
-    }
+  useVMConfiguration();
+  all_tests();
+  if (!args.isEmpty) {
+    filterTests(args[0]);
+  }
 }
