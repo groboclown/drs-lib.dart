@@ -1,11 +1,12 @@
-Discrete Reactive Simulation
-============================
+Discrete Reactive Simulation Library for Dart
+=============================================
 
 The Discrete Reactive Simulation Dart Library (drs-lib) follows a strict
 architecture for the construction of a reactive simulation of a
 Fuzzy Cognitive Map executed in discrete time increments.
 
-[You can read the architecture overview here](https://rawgithub.com/groboclown/drs-lib.dart/master/doc/architecture/index.html)
+[You can read the online documentation, including the architecture overview, on
+the site's Wiki](https://github.com/groboclown/drs-lib.dart/wiki)
 
 
 Current Status
@@ -36,11 +37,14 @@ Phase 1:
 
 1. Engine architecture document. *In progress*
 
-2. Initial cut of engine and unit tests. *In progress*
+2. Initial cut of engine and unit tests. This includes only the base FCM
+    model, with no Actions. *In progress*
 
-3. Sample simulation.
+3. Sample simulation to show how it can be used.
 
-4. Use the sample simulation to establish patterns seen in the simulation
+4. A simple UI to show the different Pragma and Attributes in the simulation.
+
+5. Use the sample simulation to establish patterns seen in the simulation
     construction.
 
 Phase 2:
