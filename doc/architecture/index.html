@@ -68,6 +68,26 @@
     system, allowing them to run in parallel, and all changes are committed
     at the end of the processing.
 </p>
+<p>
+    TODO the above statement needs to be refined.
+</p>
+<p>
+    Also, the entire set of documents needs to rely more on the formal
+    definitions of computation systems.  For example, the "functions" more
+    closely resemble futures
+    (http://en.wikipedia.org/wiki/Future_%28programming%29) with
+    hard values being "concurrent logic variables" that support unifications
+    (http://en.wikipedia.org/wiki/Unification_%28computing%29).  Note that
+    the futures here must never be lazily evaluated due to the need for
+    signaling based on evaluated value changes.
+</p>
+<p>
+    This system matches quite closely to an Actor model
+    (http://en.wikipedia.org/wiki/Actor_model).
+    The Pragmas do not meet the
+    requirements for an Actor system, because they themselves do not contain
+    the logic, however it does have many similarities.
+</p>
 
 
 <h2>General Details</h2>
@@ -120,25 +140,20 @@
 </p>
 
 
-<h3>Back Link Handling on Copy</h3>
+<h3>Action Scope</h3>
 <p>
-    If a Pragma is copied into a new Pragma, all of the Links are copied there.
-    Some of those links may be back links.  Now, the copy process should
-    first bind the actions, then set values and links so that those actions
-    on the new object are signaled.
+    The range of values available to an Action during its execution is currently
+    not well defined.  The running concept is "everything", but it usually should
+    require inputs, or at the very least an event source.  Some signals may
+    pertain to multiple Pragma, so encompassing these differences in needs is
+    tricky.
 </p>
 <p>
-    A back-link construction would need to have a bound action on the other
-    end Pragma's link to handle this.  However, noticing if this is just a
-    change of value, or a copy, is not easy in the current architecture
-    (if at all possible).  Perhaps marking attributes as transitive so that
-    they are never copied, and a bound action would check if that value was
-    set as it expects, and if not, it's a copy?
-</p>
-<p>
-    Now, it could be that the action creating the copy must be aware of these
-    links, but that's too much to ask.  Perhaps there's a special signal on
-    a pragma that can be bound to, a "was copied into..." action.
+    If these are more limited than "everything", than true parallel computations
+    can be made more feasible, because only the affected state need be
+    sent to other computing memory, changing subtly the mechanics of the
+    "weak copy".  This model doesn't provide for Locality, which introduces
+    this issue.
 </p>
 
 </body>
