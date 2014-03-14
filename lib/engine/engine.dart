@@ -6,20 +6,9 @@ library engine;
 
 
 import 'core.dart';
-export 'core.dart' show
-    DataTypeException,
-    // ...
-
-
-    Fuzzy,
-    // ...
-
-
-    StringType, StringSetType, NumericType, FuzzyType,
-    // ...
-
-
-    BasicValue;
+export 'core.dart';
 
 
 part '../src/solver.dart';
+part '../src/core_impl.dart';
+

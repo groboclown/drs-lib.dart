@@ -4,9 +4,8 @@
  */
 library drs.engine.core;
 
-
-import 'dart:collection' show UnmodifiableListView;
-import 'dart:collection' show Iterable;
+import 'dart:async';
+import 'dart:collection';
 
 
 // ------------------------------------------------------------------------
@@ -30,7 +29,7 @@ class DrsException implements Exception {
  * Thrown when the simulation setup has an incorrect configuration.
  */
 class DrsConfigurationException extends DrsException {
-  const DrsConfigurationException(String message) : super(message);
+  DrsConfigurationException(String message) : super(message);
 }
 
 
@@ -39,7 +38,7 @@ class DrsConfigurationException extends DrsException {
  * operation.
  */
 class DrsExecutionException extends DrsException {
-  const DrsConfigurationException(String message) : super(message);
+  DrsExecutionException(String message) : super(message);
 }
 
 
@@ -55,7 +54,7 @@ class DataTypeException extends DrsConfigurationException {
 
   ValueType get type => _type;
 
-  const DataTypeException(var value,
+  DataTypeException(var value,
       ValueType type) : _value = value, _type = type,
           super("could not assign [$value] to $type");
 }
@@ -69,13 +68,10 @@ class FunctionConnectionException extends DrsConfigurationException {
 
   final List<Value> inputs;
 
-  FunctionConnectionException(Function function,
-      List<Value> inputs) :
-          super("function " + function.id + " expected input types " +
-              function.inputTypes + " but encountered " + inputs) {
-    this.function = function;
-    this.inputs = inputs;
-  }
+  FunctionConnectionException(Function function, List<Value> inputs) :
+    this.function = function,
+    this.inputs = inputs,
+    super("function ${function.id} expected input types ${function.inputTypes} but encountered ${inputs}");
 }
 
 
@@ -93,9 +89,10 @@ class FunctionReturnException extends DrsExecutionException {
 
   FunctionReturnException(Function function, List<Value> inputs,
       Value output) :
-          super("function " + function.id +
-              " with inputs " + inputs + " should return type " +
-              function.outputType + ", but returned" + output);
+    this.function = function,
+    this.inputs = inputs,
+    this.output = output,
+    super("function ${function.id} with inputs ${inputs} should return type ${function.outputType} but returned ${output}");
 }
 
 
@@ -108,10 +105,10 @@ class PollInterruptedException extends DrsException {
 
   final SetValue value;
 
-  PollInterruptedException(AttributeHandle attribute,
-      SetValue value) :
-          super("interruption while waiting on " +
-  attribute + " = " + value);
+  PollInterruptedException(AttributeHandle attribute, SetValue value) :
+    this.attribute = attribute,
+    this.value = value,
+    super("interruption while waiting on ${attribute} = ${value}");
 }
 
 
@@ -150,10 +147,10 @@ class Fuzzy {
 
   String toString() {
     if (this.weight != 1) {
-      return "<" + this.data + "|" + this.weight + ">";
+      return "<${data}|${weight}>";
     }
     else {
-      return "<" + this.data + ">";
+      return "<${data}>";
     }
   }
 
@@ -167,7 +164,7 @@ class Fuzzy {
  * values may trickle in, so it should avoid using [SetValue#pollContents]
  * where possible to maximize parallel behavior.
  *
- * FIXME when Dart supports the symantics, the signature should use templated
+ * FIXME when Dart supports the semantics, the signature should use templated
  * [SetValue] and [Value] arguments and return value so that they have the same
  * underlying type.
  */
@@ -176,42 +173,55 @@ typedef Value AttributeJoinCommit(Value original, SetValue commited);
 
 
 /**
- * A simulation-wide unique identifier for an attribue.  All attributes with
+ * A simulation-wide unique identifier for an attribute.  All attributes with
  * this ID must share the same qualifications.  The user must use the correct
  * API to create one of these.  The parameterized [T] represents the data
  * type for the corresponding [ValueType] parameter.
  */
 abstract class AttributeId<T> {
-  abstract String get id;
+  String get id;
 
-  abstract ValueType<T> get type;
+  ValueType<T> get type;
 
   /**
    * FIXME use a templated [AttributeJoinCommit] when Dart supports it.
    */
-  abstract AttributeJoinCommit get joinCommitsFunction;
+  AttributeJoinCommit get joinCommitsFunction;
 }
 
 
 abstract class PragmaLink {
-  abstract String get id;
+  String get id;
 }
 
 
-abstract class AttributeLink {
-// FIXME
+abstract class AttributeLink<T> {
+  PragmaLink get pragmaLink;
+  AttributeId<T> get id;
 }
 
 
 
 abstract class PragmaHandle {
-// FIXME
+  Pragma get boundTo;
+  PragmaLink get link;
+
+  PragmaHandle bindToPragma(PragmaLink link);
+
+  AttributeHandle bindToAttribute(AttributeLink link);
+
+  /**
+   * Does the pragma this handle reference exist?
+   */
+  Fuzzy get exists;
 }
 
 
-abstract class AttributeHandle {
+abstract class AttributeHandle<T> {
+  Pragma get boundTo;
+  AttributeLink get link;
 
-// FIXME
+  T get data;
 }
 
 
@@ -226,7 +236,6 @@ abstract class ValueType<T> {
   String get name;
 
   @override
-
   String toString() {
     return name;
   }
@@ -244,7 +253,6 @@ class BasicValueType<T> implements ValueType<T> {
   const BasicValueType(this._name);
 
   @override
-
   String get name => _name;
 }
 
@@ -252,14 +260,15 @@ class BasicValueType<T> implements ValueType<T> {
 /**
  * Type representing a set of basic values.  Unlike the BasicValueType,
  * this one directly represents the type contained by the set.  This allows
- * the syntax for representing the Value much easier.
+ * for much easier syntax to represent the Value.
  */
 class SetValueType<T> extends ValueType<List<T>> {
   final BasicValueType<T> entriesOf;
 
-  const SetValueType(BasicValueType<T> type) :super(type.name + "[]") {
-    this.entriesOf = type;
-  }
+  SetValueType(this.entriesOf);
+
+  @override
+  String get name => entriesOf.name + "[]";
 }
 
 
@@ -268,7 +277,7 @@ final BasicValueType<String> StringType =
     new BasicValueType<String>("String");
 
 final SetValueType<String> StringSetType =
-    SetValueType < String(StringType);
+    new SetValueType<String>(StringType);
 
 final BasicValueType<num> NumericType =
     new BasicValueType<num>("Numeric");
@@ -295,10 +304,10 @@ final SetValueType<PragmaLink> PragmaLinkSetType =
     new SetValueType<PragmaLink>(PragmaLinkType);
 
 final BasicValueType<AttributeLink> AttributeLinkType =
-    new BasicValueTypeAttributeLink("AttributeLink");
+    new BasicValueType<AttributeLink>("AttributeLink");
 
-final SetValueTypeAttributeLink AttributeLinkSetType =
-    new SetValueTypeAttributeLink(AttributeLinkType);
+final SetValueType<AttributeLink> AttributeLinkSetType =
+    new SetValueType<AttributeLink>(AttributeLinkType);
 
 final BasicValueType<PragmaHandle> PragmaHandleType =
     new BasicValueType<PragmaHandle>("PragmaHandle");
@@ -312,7 +321,7 @@ final BasicValueType<AttributeHandle> AttributeHandleType =
 final SetValueType<AttributeHandle> AttributeHandleSetType =
     new SetValueType<AttributeHandle>(AttributeHandleType);
 
-const List<ValueType> ALLOWABLE_TYPES = new UnmodifiableListView<ValueType>([
+final List<ValueType> ALLOWABLE_TYPES = new UnmodifiableListView<ValueType>([
     StringType,
     StringSetType,
     NumericType,
@@ -330,6 +339,22 @@ const List<ValueType> ALLOWABLE_TYPES = new UnmodifiableListView<ValueType>([
     AttributeHandleType,
     AttributeHandleSetType
 ]);
+
+
+/**
+ * Is this object one of the allowable types?
+ */
+bool isAllowableType(var obj) {
+  if (obj == null) {
+    return false;
+  }
+  for (var x in ALLOWABLE_TYPES) {
+    if (obj == x) {
+      return true;
+    }
+  }
+  return false;
+}
 
 
 
@@ -359,13 +384,11 @@ class BasicValue<T> implements Value<T> {
   const BasicValue(this._type, this._data);
 
   @override
-
   BasicValueType<T> get type => _type;
 
   T get data => _data;
 
   @override
-
   String toString() {
     return "Value<" + type.toString() + ">(" +
     (_data == null ? "<null>" : _data.toString()) + ")";
@@ -378,32 +401,28 @@ class BasicValue<T> implements Value<T> {
  * to allow for different implementations.  As a result of the lazy load,
  * there is no direct way to discover the size of the set.
  */
-class SetValue<T> implements Iterable<T>, Value<T> {
-  final ValueType<T> _type;
+abstract class SetValue<T> implements Value<T> {
+  final SetValueType<T> _type;
 
   const SetValue(this._type);
 
   @override
-  ValueType<T> get type => _type;
+  SetValueType<T> get type => _type;
 
+  Iterator<T> get iterator => iteratorTimeout(0);
 
   /**
-   * A slighly different method signature for the iterator call.  It can
-   * take a numeric representing numer of seconds to wait before a timeout,
-   * which will cause a PollInterruptedException if the list is lazy loaded
+   * A slightly different method signature for the iterator call.  It can
+   * take a numeric representing number of seconds to wait before a timeout,
+   * which will cause a [PollInterruptedException] if the list is lazy loaded
    * and does not return a value in a timely manner.
    */
-  @override
-  abstract Iterator<T> iterator({ num timeoutSeconds: 0 });
-
+  Iterator<T> iteratorTimeout(num timeoutSeconds);
 
   /**
-   * Potentially blocking call to pull the entire contents of the set.
-   * Returns a null value if no more values can be pulled.  It
-   * throws a [PollInterruptedException] if the poll timed out or was
-   * interrupted
+   * Return the list when the contents have been fully read.
    */
-  abstract List<T> pollContents();
+  List<T> pollContents();
 }
 
 
@@ -411,31 +430,27 @@ class SetValue<T> implements Iterable<T>, Value<T> {
  * A simple [SetValue] used for standard user creation of a value.  The
  * parameter type [T] is the underlying data type of the contained [BasicValue].
  */
-
 class ImmutableSetValue<T> extends SetValue<T> {
-  final List<BasicValue<T>> data;
+  List<BasicValue<T>> _data;
 
-  const ImmutableSetValue(SetValueType<T> type, List<T> data) :super(type) {
-    List<Value<T>> t = new List<Value<T>>();
-    for (T v in data) {
+  ImmutableSetValue(BasicValueType<T> type, List<T> data) : super(type) {
+    List<Value> t = new List<Value>();
+    for (var v in data) {
       t.add(new BasicValue<T>(type, v));
     }
-
-    this.data = new UnmodifiableListView(t);
+    _data = new UnmodifiableListView(t);
   }
 
 
   @override
-
-  Iterator<BasicValue<T>> iterator({ num timeoutSeconds: 0 }) {
-    return data.iterator();
+  Iterator<BasicValue<T>> iteratorTimeout(num timeoutSeconds) {
+    return _data.iterator;
   }
 
 
   @override
-
   List<BasicValue<T>> pollContents() {
-    return this.data;
+    return _data;
   }
 }
 
@@ -446,13 +461,10 @@ class ImmutableSetValue<T> extends SetValue<T> {
  * explicitly know when to use these, because it implies a series of highly
  * parallelizable processes.
  */
-
 abstract class LazySetValue<T> extends SetValue<T> {
-
   LazySetValue(SetValueType<T> type) : super(type);
 
-  abstract void add(Value<T> value);
-
+  void add(Value<T> value);
 }
 
 
@@ -464,15 +476,13 @@ abstract class LazySetValue<T> extends SetValue<T> {
  * The type for a function that runs over the typed inputs and generates the
  * typed output.
  */
-
 typedef Value FunctionDef(List<Value> inputs);
 
 
 /**
- * Definition for a fully typed function.  The engine may allow for speciallized
+ * Definition for a fully typed function.  The engine may allow for specialized
  * construction of variations on this.
  */
-
 class Function {
   final String id;
 
@@ -485,20 +495,19 @@ class Function {
   const Function(this.id, this.outputType, this.inputTypes, this._functionDef);
 
 
-/**
-     * Validates the input values, executes the function definition, validates
-     * the output, and returns the output value.
-     */
-
+  /**
+   * Validates the input values, executes the function definition, validates
+   * the output, and returns the output value.
+   */
   Value compute(List<Value> values) {
     _validateInputs(values);
-    Value ret = this._functionDef(inputs);
-    _validateOutput(ret);
+    Value ret = this._functionDef(values);
+    _validateOutput(values, ret);
     return ret;
   }
 
 
-  const void _validateInputs(List<Value> values) {
+  void _validateInputs(List<Value> values) {
     if (values.length != inputTypes.length) {
       throw new FunctionConnectionException(this, values);
     }
@@ -510,7 +519,7 @@ class Function {
   }
 
 
-  const void _validateOutput(Value ret) {
+  void _validateOutput(List<Value> values, Value ret) {
     if (ret == null || this.outputType != ret.type) {
       throw new FunctionReturnException(this, values, ret);
     }

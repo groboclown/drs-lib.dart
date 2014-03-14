@@ -44,7 +44,7 @@ test_FuzzyType() {
 
 
 all_tests() {
-  group('NumericType', test_NumericType);
+  test_NumericType();
   test_FuzzyType();
 }
 

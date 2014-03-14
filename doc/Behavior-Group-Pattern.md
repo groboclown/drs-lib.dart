@@ -1,0 +1,1 @@
+A collection of Actions that work together to bind Functions, Links, and Attributes to create a cohesive behavior.

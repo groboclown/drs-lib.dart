@@ -6,3 +6,4 @@ dependencies:
 
 dev_dependencies:
   unittest: ">=0.9.3"
+  builder: ">=0.0.1"
