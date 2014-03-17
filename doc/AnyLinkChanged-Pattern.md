@@ -4,7 +4,7 @@ If we define global ALL_ATTRIBUTE_ID and ALL_LINK_ID sets, then this is
 just a matter of defining two functions:
 
     func getPragmaLinks(PragmaHandle p, PragmaLinkSet links) : PragmaHandleSet
-        yield link in links: p.bindToPragma(link)
+        yield link in links: bind(p, link)
 
     func getExistingPragma(PragmaHandleSet phs) : PragmaHandleSet
         yield handle in phs: handle : where handle.exists

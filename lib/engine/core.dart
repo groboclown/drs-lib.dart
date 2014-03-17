@@ -68,9 +68,9 @@ class FunctionConnectionException extends DrsConfigurationException {
 
   final List<Value> inputs;
 
-  FunctionConnectionException(Function function, List<Value> inputs) :
+  FunctionConnectionException(Function function, Iterable<Value> inputs) :
     this.function = function,
-    this.inputs = inputs,
+    this.inputs = new List<Value>.from(inputs),
     super("function ${function.id} expected input types ${function.inputTypes} but encountered ${inputs}");
 }
 
@@ -87,28 +87,12 @@ class FunctionReturnException extends DrsExecutionException {
 
   final Value output;
 
-  FunctionReturnException(Function function, List<Value> inputs,
+  FunctionReturnException(Function function, Iterable<Value> inputs,
       Value output) :
     this.function = function,
-    this.inputs = inputs,
+    this.inputs = new List<Value>.from(inputs),
     this.output = output,
     super("function ${function.id} with inputs ${inputs} should return type ${function.outputType} but returned ${output}");
-}
-
-
-/**
- * A poll on a Set timed out, or was interrupted by an external request.
- * These should always be handled to ensure the errors do not propigate.
- */
-class PollInterruptedException extends DrsException {
-  final AttributeHandle attribute;
-
-  final SetValue value;
-
-  PollInterruptedException(AttributeHandle attribute, SetValue value) :
-    this.attribute = attribute,
-    this.value = value,
-    super("interruption while waiting on ${attribute} = ${value}");
 }
 
 
@@ -127,6 +111,8 @@ class PollInterruptedException extends DrsException {
  * computations must support a variable number of arguments.
  */
 class Fuzzy {
+  static const EPSILON = 0.0001;
+
   final double data;
 
   final double weight;
@@ -144,7 +130,7 @@ class Fuzzy {
 
   const Fuzzy._internal(this.data, this.weight);
 
-
+  @override
   String toString() {
     if (this.weight != 1) {
       return "<${data}|${weight}>";
@@ -152,6 +138,25 @@ class Fuzzy {
     else {
       return "<${data}>";
     }
+  }
+
+  @override
+  bool operator ==(var obj) {
+    if (obj != null && obj is Fuzzy) {
+      Fuzzy f = obj as Fuzzy;
+
+      return Fuzzy._withinEpsilon(f.data, data) &&
+        Fuzzy._withinEpsilon(f.weight, weight);
+    }
+    return false;
+  }
+
+  // TODO add hashCode
+
+
+
+  static _withinEpsilon(num a, num b) {
+    return ((a - b) < Fuzzy.EPSILON && (b - a) < Fuzzy.EPSILON);
   }
 
 
@@ -184,9 +189,14 @@ abstract class AttributeId<T> {
   ValueType<T> get type;
 
   /**
-   * FIXME use a templated [AttributeJoinCommit] when Dart supports it.
+   * FIXME use a template [AttributeJoinCommit] when Dart supports it.
    */
   AttributeJoinCommit get joinCommitsFunction;
+
+
+  bool isValueValid(Value v) {
+    return (v != null) && (v.type == type);
+  }
 }
 
 
@@ -250,7 +260,7 @@ abstract class ValueType<T> {
 class BasicValueType<T> implements ValueType<T> {
   final String _name;
 
-  const BasicValueType(this._name);
+  const BasicValueType._(this._name);
 
   @override
   String get name => _name;
@@ -262,10 +272,10 @@ class BasicValueType<T> implements ValueType<T> {
  * this one directly represents the type contained by the set.  This allows
  * for much easier syntax to represent the Value.
  */
-class SetValueType<T> extends ValueType<List<T>> {
+class SetValueType<T> extends ValueType<Iterable<T>> {
   final BasicValueType<T> entriesOf;
 
-  SetValueType(this.entriesOf);
+  SetValueType._(this.entriesOf);
 
   @override
   String get name => entriesOf.name + "[]";
@@ -274,52 +284,52 @@ class SetValueType<T> extends ValueType<List<T>> {
 
 
 final BasicValueType<String> StringType =
-    new BasicValueType<String>("String");
+    new BasicValueType<String>._("String");
 
 final SetValueType<String> StringSetType =
-    new SetValueType<String>(StringType);
+    new SetValueType<String>._(StringType);
 
 final BasicValueType<num> NumericType =
-    new BasicValueType<num>("Numeric");
+    new BasicValueType<num>._("Numeric");
 
 final SetValueType<num> NumericSetType =
-    new SetValueType<num>(NumericType);
+    new SetValueType<num>._(NumericType);
 
 final BasicValueType<Fuzzy> FuzzyType =
-    new BasicValueType<Fuzzy>("Fuzzy");
+    new BasicValueType<Fuzzy>._("Fuzzy");
 
 final SetValueType<Fuzzy> FuzzySetType =
-    new SetValueType<Fuzzy>(FuzzyType);
+    new SetValueType<Fuzzy>._(FuzzyType);
 
 final BasicValueType<AttributeId> AttributeIdType =
-    new BasicValueType<AttributeId>("AttributeId");
+    new BasicValueType<AttributeId>._("AttributeId");
 
 final SetValueType<AttributeId> AttributeIdSetType =
-    new SetValueType<AttributeId>(AttributeIdType);
+    new SetValueType<AttributeId>._(AttributeIdType);
 
 final BasicValueType<PragmaLink> PragmaLinkType =
-    new BasicValueType<PragmaLink>("PragmaLink");
+    new BasicValueType<PragmaLink>._("PragmaLink");
 
 final SetValueType<PragmaLink> PragmaLinkSetType =
-    new SetValueType<PragmaLink>(PragmaLinkType);
+    new SetValueType<PragmaLink>._(PragmaLinkType);
 
 final BasicValueType<AttributeLink> AttributeLinkType =
-    new BasicValueType<AttributeLink>("AttributeLink");
+    new BasicValueType<AttributeLink>._("AttributeLink");
 
 final SetValueType<AttributeLink> AttributeLinkSetType =
-    new SetValueType<AttributeLink>(AttributeLinkType);
+    new SetValueType<AttributeLink>._(AttributeLinkType);
 
 final BasicValueType<PragmaHandle> PragmaHandleType =
-    new BasicValueType<PragmaHandle>("PragmaHandle");
+    new BasicValueType<PragmaHandle>._("PragmaHandle");
 
 final SetValueType<PragmaHandle> PragmaHandleSetType =
-    new SetValueType<PragmaHandle>(PragmaHandleType);
+    new SetValueType<PragmaHandle>._(PragmaHandleType);
 
 final BasicValueType<AttributeHandle> AttributeHandleType =
-    new BasicValueType<AttributeHandle>("AttributeHandle");
+    new BasicValueType<AttributeHandle>._("AttributeHandle");
 
 final SetValueType<AttributeHandle> AttributeHandleSetType =
-    new SetValueType<AttributeHandle>(AttributeHandleType);
+    new SetValueType<AttributeHandle>._(AttributeHandleType);
 
 final List<ValueType> ALLOWABLE_TYPES = new UnmodifiableListView<ValueType>([
     StringType,
@@ -339,6 +349,17 @@ final List<ValueType> ALLOWABLE_TYPES = new UnmodifiableListView<ValueType>([
     AttributeHandleType,
     AttributeHandleSetType
 ]);
+
+final Map<ValueType, SetValueType> _SET_TYPE_FOR = {
+  StringType: StringSetType,
+  NumericType: NumericSetType,
+  FuzzyType: FuzzySetType,
+  AttributeIdType: AttributeIdSetType,
+  PragmaLinkType: PragmaLinkSetType,
+  AttributeLinkType: AttributeLinkSetType,
+  PragmaHandleType: PragmaHandleSetType,
+  AttributeHandleType: AttributeHandleSetType
+};
 
 
 /**
@@ -406,23 +427,22 @@ abstract class SetValue<T> implements Value<T> {
 
   const SetValue(this._type);
 
+
+  /**
+   * Creates an immutable list of values.
+   */
+  factory SetValue.from(BasicValueType<T> type, Iterable<T> data) {
+    return new ImmutableSetValue(type, data);
+  }
+
+
   @override
   SetValueType<T> get type => _type;
 
-  Iterator<T> get iterator => iteratorTimeout(0);
-
   /**
-   * A slightly different method signature for the iterator call.  It can
-   * take a numeric representing number of seconds to wait before a timeout,
-   * which will cause a [PollInterruptedException] if the list is lazy loaded
-   * and does not return a value in a timely manner.
+   * A broadcast stream of the values.
    */
-  Iterator<T> iteratorTimeout(num timeoutSeconds);
-
-  /**
-   * Return the list when the contents have been fully read.
-   */
-  List<T> pollContents();
+  Stream<BasicValue<T>> get data;
 }
 
 
@@ -431,27 +451,19 @@ abstract class SetValue<T> implements Value<T> {
  * parameter type [T] is the underlying data type of the contained [BasicValue].
  */
 class ImmutableSetValue<T> extends SetValue<T> {
-  List<BasicValue<T>> _data;
+  final StreamController<BasicValue<T>> _data;
 
-  ImmutableSetValue(BasicValueType<T> type, List<T> data) : super(type) {
-    List<Value> t = new List<Value>();
+  ImmutableSetValue(BasicValueType<T> type, Iterable<T> data) :
+      _data = new StreamController<T>.broadcast(),
+      super(_setTypeFor(type)) {
     for (var v in data) {
-      t.add(new BasicValue<T>(type, v));
+      _data.add(new BasicValue<T>(type, v));
     }
-    _data = new UnmodifiableListView(t);
+    _data.close();
   }
 
+  Stream<BasicValue<T>> get data => _data.stream;
 
-  @override
-  Iterator<BasicValue<T>> iteratorTimeout(num timeoutSeconds) {
-    return _data.iterator;
-  }
-
-
-  @override
-  List<BasicValue<T>> pollContents() {
-    return _data;
-  }
 }
 
 
@@ -462,9 +474,12 @@ class ImmutableSetValue<T> extends SetValue<T> {
  * parallelizable processes.
  */
 abstract class LazySetValue<T> extends SetValue<T> {
-  LazySetValue(SetValueType<T> type) : super(type);
+  LazySetValue(BasicValueType<T> type) :
+      super(_setTypeFor(type));
 
   void add(Value<T> value);
+
+  void close();
 }
 
 
@@ -476,17 +491,18 @@ abstract class LazySetValue<T> extends SetValue<T> {
  * The type for a function that runs over the typed inputs and generates the
  * typed output.
  */
-typedef Value FunctionDef(List<Value> inputs);
+typedef Value FunctionDef(Iterable<Value> inputs);
 
 
 /**
  * Definition for a fully typed function.  The engine may allow for specialized
- * construction of variations on this.
+ * construction of variations on this.  This is not a [Value] because it doesn't
+ * store the computed result.
  */
-class Function {
+class Function<T> {
   final String id;
 
-  final ValueType outputType;
+  final ValueType<T> outputType;
 
   final List<ValueType> inputTypes;
 
@@ -499,7 +515,7 @@ class Function {
    * Validates the input values, executes the function definition, validates
    * the output, and returns the output value.
    */
-  Value compute(List<Value> values) {
+  Value<T> compute(Iterable<Value> values) {
     _validateInputs(values);
     Value ret = this._functionDef(values);
     _validateOutput(values, ret);
@@ -507,23 +523,58 @@ class Function {
   }
 
 
-  void _validateInputs(List<Value> values) {
+  void _validateInputs(Iterable<Value> values) {
     if (values.length != inputTypes.length) {
       throw new FunctionConnectionException(this, values);
     }
-    for (int i = 0; i < values.length; ++i) {
-      if (values[i] == null || this.inputTypes[i] != values[i].type) {
+    int i = 0;
+    for (var value in values) {
+      if (values == null || this.inputTypes[i] != value.type) {
         throw new FunctionConnectionException(this, values);
       }
+      ++i;
     }
   }
 
 
-  void _validateOutput(List<Value> values, Value ret) {
+  void _validateOutput(Iterable<Value> values, Value ret) {
     if (ret == null || this.outputType != ret.type) {
       throw new FunctionReturnException(this, values, ret);
     }
   }
+}
+
+
+
+// ------------------------------------------------------------------------
+// Pragma Class
+
+/**
+ * Contains references to the attribute values, the linked-to values, and
+ * breakfast foods.  Note that it is not a value.
+ */
+abstract class Pragma {
+  String get id;
+
+  /**
+   * Returns all links to non-null [Pragma].
+   */
+  SetValue<PragmaHandle> get links;
+
+  /**
+   * Sets a link ID to a pragma id.
+   */
+  void setLink(PragmaLink link, String pragmaId);
+
+  /**
+   * Return all attributes to non-null Attribute values.
+   */
+  SetValue<AttributeHandle> get attributes;
+
+  /**
+   *
+   */
+  void setAttribute(AttributeId attributeId, Value value);
 }
 
 
@@ -551,4 +602,10 @@ num _argIsFuzzy(num arg) {
     throw new DataTypeException(arg, FuzzyType);
   }
   return arg;
+}
+
+SetValueType _setTypeFor(ValueType vt) {
+  var ret = _SET_TYPE_FOR[vt];
+  assert (ret != null);
+  return ret;
 }

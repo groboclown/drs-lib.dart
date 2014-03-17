@@ -2,13 +2,17 @@
  * The grpg engine library.
  */
 
-library engine;
+library drs.engine.engine;
 
 
 import 'core.dart';
 export 'core.dart';
 
+import 'dart:async';
+
+
+
+
 
 part '../src/solver.dart';
-part '../src/core_impl.dart';
 
