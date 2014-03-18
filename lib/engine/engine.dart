@@ -12,7 +12,7 @@ import 'dart:async';
 
 
 
-
-
+part '../src/basicvalue.dart';
+part '../src/setvalue.dart';
 part '../src/solver.dart';
 

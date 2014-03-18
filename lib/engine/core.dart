@@ -213,12 +213,12 @@ abstract class AttributeLink<T> {
 
 
 abstract class PragmaHandle {
-  Pragma get boundTo;
+  PragmaHandle get boundTo;
   PragmaLink get link;
 
   PragmaHandle bindToPragma(PragmaLink link);
 
-  AttributeHandle bindToAttribute(AttributeLink link);
+  AttributeHandle<T> bindToAttribute(AttributeLink<T> link);
 
   /**
    * Does the pragma this handle reference exist?
@@ -228,9 +228,13 @@ abstract class PragmaHandle {
 
 
 abstract class AttributeHandle<T> {
-  Pragma get boundTo;
-  AttributeLink get link;
+  PragmaHandle get boundTo;
+  AttributeLink<T> get link;
 
+  /**
+   * Returns the actual data held in the attribute's [Value].  Thus, the
+   * result may be `null`.
+   */
   T get data;
 }
 
@@ -562,7 +566,8 @@ abstract class Pragma {
   SetValue<PragmaHandle> get links;
 
   /**
-   * Sets a link ID to a pragma id.
+   * Sets a link ID to a pragma id.  This will only be committed during the
+   * commit phase.
    */
   void setLink(PragmaLink link, String pragmaId);
 
@@ -572,9 +577,47 @@ abstract class Pragma {
   SetValue<AttributeHandle> get attributes;
 
   /**
-   *
+   * Sets the attribute on the pragma.  This will only be committed during the
+   * commit phase.
    */
   void setAttribute(AttributeId attributeId, Value value);
+}
+
+
+
+// ------------------------------------------------------------------------
+// World
+
+/**
+ * Identifier that associates a registered signal to the corresponding
+ * attribute.  Instances are used to remove signals from the [World].
+ *
+ */
+abstract class SignalId {
+  Pragma get pragma;
+
+  AttributeId get attribute;
+}
+
+
+// This could be a class, with a source identifier, for easier tracing.
+typedef void SignalAction(SignalId id, World world);
+
+
+/**
+ * The top-level API access into the engine interactive data.
+ */
+abstract class World {
+  Pragma createPragma();
+
+  Pragma getPragma(PragmaHandle handle);
+
+  SignalId bindSignal(Pragma pragma, AttributeId attribute,
+      SignalAction action);
+
+  void removeSignal(SignalId signalId);
+
+  void removePragma(Pragma pragma);
 }
 
 
@@ -603,6 +646,7 @@ num _argIsFuzzy(num arg) {
   }
   return arg;
 }
+
 
 SetValueType _setTypeFor(ValueType vt) {
   var ret = _SET_TYPE_FOR[vt];
