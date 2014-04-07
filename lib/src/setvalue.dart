@@ -31,9 +31,9 @@ class DefaultLazySetValue<T> extends LazySetValue<T> {
   final StreamController<BasicValue<T>> _data;
 
   DefaultLazySetValue(BasicValueType<T> type, OnUpdate onUpdate) :
-  _data = new StreamController<BasicValue<T>>.broadcast(),
-  _onUpdate = onUpdate,
-  super(type);
+      _data = new StreamController<BasicValue<T>>.broadcast(),
+      _onUpdate = onUpdate,
+      super(type);
 
   @override
   void add(Value<T> value) {
@@ -61,10 +61,9 @@ class KeyedSetValue<K, T> extends SetValue<T> {
   final OnSetValuesUpdated _callback;
 
   KeyedSetValue(ValueType<T> type, OnSetValuesUpdated callback) :
-  _data = <K, T>{
-  },
-  _callback = callback,
-  super(type);
+      _data = <K, T>{},
+      _callback = callback,
+      super(type);
 
   @override
   Stream<BasicValue<T>> get data {

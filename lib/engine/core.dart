@@ -43,6 +43,15 @@ class DrsExecutionException extends DrsException {
 
 
 /**
+ * Thrown when the execution of an Action or Function performs an illegal
+ * operation.
+ */
+class FuzzyDataTypeComparisonException extends DrsException {
+  FuzzyDataTypeComparisonException(String message) : super(message);
+}
+
+
+/**
  * Indicates an inconsistency between the data value and its assigned-to type.
  */
 class DataTypeException extends DrsConfigurationException {
@@ -64,11 +73,11 @@ class DataTypeException extends DrsConfigurationException {
  * Indicates that a function was not wired to its inputs correctly.
  */
 class FunctionConnectionException extends DrsConfigurationException {
-  final Function function;
+  final AttributeFunction function;
 
   final List<Value> inputs;
 
-  FunctionConnectionException(Function function, Iterable<Value> inputs) :
+  FunctionConnectionException(AttributeFunction function, Iterable<AttributeId> inputs) :
     this.function = function,
     this.inputs = new List<Value>.from(inputs),
     super("function ${function.id} expected input types ${function.inputTypes} but encountered ${inputs}");
@@ -81,13 +90,13 @@ class FunctionConnectionException extends DrsConfigurationException {
  */
 
 class FunctionReturnException extends DrsExecutionException {
-  final Function function;
+  final AttributeFunction function;
 
   final List<Value> inputs;
 
   final Value output;
 
-  FunctionReturnException(Function function, Iterable<Value> inputs,
+  FunctionReturnException(AttributeFunction function, Iterable<Value> inputs,
       Value output) :
     this.function = function,
     this.inputs = new List<Value>.from(inputs),
@@ -160,7 +169,33 @@ class Fuzzy {
   }
 
 
-// TODO add group operations to the data type, such as average etc.
+  // TODO add group operations to the data type, such as average etc.
+
+  @override
+  bool operator >(var obj) {
+    if (obj is Fuzzy) {
+      return data > (obj as Fuzzy).data;
+    } else if (obj is num) {
+      return data > (obj as num);
+    } else {
+      throw new FuzzyDataTypeComparisonException(
+          "Could not compare fuzzy value to $obj");
+    }
+  }
+
+  @override
+  bool operator <(var obj) {
+    if (obj is Fuzzy) {
+      return data < (obj as Fuzzy).data;
+    }
+    else if (obj is num) {
+      return data < (obj as num);
+    }
+    else {
+      throw new FuzzyDataTypeComparisonException(
+          "Could not compare fuzzy value to $obj");
+    }
+  }
 }
 
 
@@ -172,6 +207,7 @@ class Fuzzy {
  * FIXME when Dart supports the semantics, the signature should use templated
  * [SetValue] and [Value] arguments and return value so that they have the same
  * underlying type.
+ * http://code.google.com/p/dart/issues/detail?id=254
  */
 typedef Value AttributeJoinCommit(Value original, SetValue commited);
 
@@ -216,10 +252,6 @@ abstract class PragmaHandle {
   PragmaHandle get boundTo;
   PragmaLink get link;
 
-  PragmaHandle bindToPragma(PragmaLink link);
-
-  AttributeHandle<T> bindToAttribute(AttributeLink<T> link);
-
   /**
    * Does the pragma this handle reference exist?
    */
@@ -233,7 +265,8 @@ abstract class AttributeHandle<T> {
 
   /**
    * Returns the actual data held in the attribute's [Value].  Thus, the
-   * result may be `null`.
+   * result may be `null` if either the bound-to [Pragma] doesn't exist, or
+   * if the [Pragma]'s attribute is `null`.
    */
   T get data;
 }
@@ -503,7 +536,7 @@ typedef Value FunctionDef(Iterable<Value> inputs);
  * construction of variations on this.  This is not a [Value] because it doesn't
  * store the computed result.
  */
-class Function<T> {
+class AttributeFunction<T> {
   final String id;
 
   final ValueType<T> outputType;
@@ -512,7 +545,8 @@ class Function<T> {
 
   final FunctionDef _functionDef;
 
-  const Function(this.id, this.outputType, this.inputTypes, this._functionDef);
+  const AttributeFunction(this.id, this.outputType, this.inputTypes,
+      this._functionDef);
 
 
   /**
@@ -520,14 +554,14 @@ class Function<T> {
    * the output, and returns the output value.
    */
   Value<T> compute(Iterable<Value> values) {
-    _validateInputs(values);
+    //_validateInputs(values);
     Value ret = this._functionDef(values);
     _validateOutput(values, ret);
     return ret;
   }
 
 
-  void _validateInputs(Iterable<Value> values) {
+  void validateInputs(Iterable<AttributeId> values) {
     if (values.length != inputTypes.length) {
       throw new FunctionConnectionException(this, values);
     }
@@ -553,12 +587,21 @@ class Function<T> {
 // ------------------------------------------------------------------------
 // Pragma Class
 
+
+/**
+ * A global identifier for a [Pragma].  The [toString()] value on this returns
+ * a reasonable value.
+ */
+abstract class PragmaId {
+  String get id;
+}
+
 /**
  * Contains references to the attribute values, the linked-to values, and
  * breakfast foods.  Note that it is not a value.
  */
 abstract class Pragma {
-  String get id;
+  PragmaId get id;
 
   /**
    * Returns all links to non-null [Pragma].
@@ -594,7 +637,7 @@ abstract class Pragma {
  *
  */
 abstract class SignalId {
-  Pragma get pragma;
+  PragmaId get pragma;
 
   AttributeId get attribute;
 }
@@ -611,6 +654,12 @@ abstract class World {
   Pragma createPragma();
 
   Pragma getPragma(PragmaHandle handle);
+
+  /**
+   * FIXME when Dart gets generics on functions, change this to be typed
+   * (AttributeHandle<T>, and returns T).
+   */
+  dynamic getAttributeValue(AttributeHandle handle);
 
   SignalId bindSignal(Pragma pragma, AttributeId attribute,
       SignalAction action);
@@ -630,7 +679,6 @@ abstract class World {
  * Used by const constructors to perform validation that the argument is not
  * null.
  */
-
 _argNotNull(arg, ValueType type) {
   if (arg == null) {
     throw new DataTypeException(arg, type);

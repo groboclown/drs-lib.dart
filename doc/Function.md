@@ -50,7 +50,8 @@ average can work as expected.
 
     def averageValue : num <= foreach(
         // input variables into this function; the first one is the list that
-        // is iterated over
+        // is iterated over, with the name in brackets being the per-iteration
+        // variable name.
         (List<num> values[val])
 
         // shared variables across the operations.
@@ -92,7 +93,7 @@ a List.
         // not shared).
         (num angle_calc)
 
-        // pre-loop setup
+        // pre-loop setup.  It does not have access to the loop list variable.
         {
           angle_calc = sin(angle * PI / sqrt(2));
         }
@@ -111,6 +112,11 @@ per-value loop:
         () {}
         bindAttribute(handle, attr)
     )
+
+The engine should be optimized to process individual changes inside the list.
+It means that the pre-loop setup values need to be cached with the function
+instance.  The whole list must be re-processed if the other input values change.
+
 
 #### iterate
 

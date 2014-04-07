@@ -17,10 +17,7 @@ class StdAttributeId<T> extends AttributeId<T> {
   @override
   ValueType<T> get type => _type;
 
-  /**
-   * FIXME use a template [AttributeJoinCommit] when Dart supports it.
-   */
-
+  // FIXME use a template [AttributeJoinCommit] when Dart supports it.
   @override
   AttributeJoinCommit get joinCommitsFunction => _joinCommitsFunction;
 }
@@ -56,7 +53,9 @@ class StdAttributeLink<T> implements AttributeLink<T> {
 class StdPragmaHandle implements PragmaHandle {
   final PragmaHandle _boundTo;
   final PragmaLink _link;
+  final World _world;
 
+  const StdPragmaHandle(this._world, this._boundTo, this._link);
 
 
   @override
@@ -65,36 +64,27 @@ class StdPragmaHandle implements PragmaHandle {
   @override
   PragmaLink get link => _link;
 
-  @override
-  PragmaHandle bindToPragma(PragmaLink link) {
-
-  }
-
-  @override
-  AttributeHandle bindToAttribute(AttributeLink link) {
-
-  }
-
   /**
    * Does the pragma this handle reference exist?
    */
   @override
-  Fuzzy get exists {
-
-  }
+  Fuzzy get exists => _world.getPragma(this) != null;
 }
 
 
 class StdAttributeHandle<T> implements AttributeHandle<T> {
+  final PragmaHandle _boundTo;
+  final AttributeLink _link;
+  final World _world;
 
-
-
-  @override
-  Pragma get boundTo;
-
-  @override
-  AttributeLink get link;
+  const StdAttributeHandle(this._world, this._boundTo, this._link);
 
   @override
-  T get data;
+  PragmaHandle get boundTo => _boundTo;
+
+  @override
+  AttributeLink<T> get link => _link;
+
+  @override
+  T get data => _world.getAttributeValue(this);
 }
