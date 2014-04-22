@@ -58,6 +58,10 @@ Function could take only one Set argument and multiple value arguments - a
 change in the value would require rerunning the Function against all the
 elements in the Set.
 
+Another method would be to have a distinct set of function patterns which can
+be implemented.  One such pattern is a per-item functionality, with constraints
+that no data is shared between the computation of the individual elements.  This
+is what's currently documented and planned.
 
 - - -
 
